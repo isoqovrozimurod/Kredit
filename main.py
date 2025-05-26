@@ -26,7 +26,7 @@ class KreditState(StatesGroup):
 def annuitet_kredit_jadvali(summasi, oy_soni, yillik_foiz=56):
     oylik_foiz = yillik_foiz / 12 / 100
     annuitet_tolov = summasi * (oylik_foiz * (1 + oylik_foiz) ** oy_soni) / ((1 + oylik_foiz) ** oy_soni - 1)
-    jadval = []
+    jadval = [["Boshlanish", 0, 0, 0, round(summasi)]]
     qoldiq = summasi
     for oy in range(1, oy_soni + 1):
         foiz_tolovi = qoldiq * oylik_foiz
@@ -44,7 +44,7 @@ def annuitet_kredit_jadvali(summasi, oy_soni, yillik_foiz=56):
 def differensial_kredit_jadvali(summasi, oy_soni, yillik_foiz=56):
     oylik_foiz = yillik_foiz / 12 / 100
     asosiy_qaytarish = summasi / oy_soni
-    jadval = []
+    jadval = [["Boshlanish", 0, 0, 0, round(summasi)]]
     qoldiq = summasi
     for oy in range(1, oy_soni + 1):
         foiz_tolovi = qoldiq * oylik_foiz
@@ -66,8 +66,8 @@ def draw_table_image(jadval, title, filename, muddat):
     fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4
     ax.axis('off')
 
-    jami_foiz = sum(row[1] for row in jadval)
-    jami_tolov = sum(row[3] for row in jadval)
+    jami_foiz = sum(row[1] for row in jadval[1:])
+    jami_tolov = sum(row[3] for row in jadval[1:])
 
     table_data = [["Sana", "Foizlar", "Asosiy qarz", "Oylik to‘lov", "Qoldiq summa"]]
     for row in jadval:
@@ -81,7 +81,7 @@ def draw_table_image(jadval, title, filename, muddat):
     table_data.append([
         "Jami",
         format_summa(jami_foiz),
-        "-",
+        format_summa(jadval[0][4]),
         format_summa(jami_tolov),
         "-"
     ])
@@ -95,7 +95,6 @@ def draw_table_image(jadval, title, filename, muddat):
         bbox=[0, 0, 1, 1]
     )
 
-    # Dinamik font size va padding
     if muddat <= 12:
         font_size = 12
         cell_padding = 0.05
@@ -108,20 +107,13 @@ def draw_table_image(jadval, title, filename, muddat):
     elif muddat <= 48:
         font_size = 7
         cell_padding = 0.03
-    elif muddat <= 60:
+    else:
         font_size = 6
         cell_padding = 0.025
-    elif muddat <= 72:
-        font_size = 5.5
-        cell_padding = 0.02
-    else:
-        font_size = 5
-        cell_padding = 0.015
 
     table.auto_set_font_size(False)
     table.set_fontsize(font_size)
 
-    # Katak ranglari va chiziqlar
     for row in range(1, rows - 1):
         color = '#f9f9f9' if row % 2 == 0 else '#ffffff'
         for col in range(5):
@@ -156,7 +148,6 @@ def draw_table_image(jadval, title, filename, muddat):
 
     return file_path, round(jami_foiz), round(jami_tolov)
 
-# Bot komandalar
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
     await message.answer("Kredit hisoblash uchun /kredit buyrug‘ini bosing.")
@@ -189,7 +180,6 @@ async def get_muddat(message: Message, state: FSMContext):
 
         data = await state.get_data()
         summa = data['summasi']
-        # Noyob fayl nomlari
         annuitet_filename = f"annuitet_{uuid.uuid4().hex}.png"
         differensial_filename = f"differensial_{uuid.uuid4().hex}.png"
 
@@ -220,7 +210,6 @@ async def get_muddat(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("Iltimos, to‘g‘ri raqam kiriting!")
 
-# Asosiy ishga tushirish
 async def main():
     await dp.start_polling(bot)
 
